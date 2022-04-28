@@ -4,61 +4,38 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private Rigidbody playerRb;
-    private Animator playerAnim;
-    public float jumpForce;
-    public float gravityModifier;
+    public float horizontalInput;
+    public float speed = 10.0f;
+    public float xRange = 10;
 
-    public ParticleSystem explosionParticle;
-    public ParticleSystem dirtParticle;
-
-    public bool isOnGround = true;
-
-    public AudioClip jumpSound;
-    public AudioClip crashSound;
-    private AudioSource playerAudio;
-
+    public GameObject projectilePrefab;
 
     // Start is called before the first frame update
     void Start()
     {
-        playerRb = GetComponent<Rigidbody>();
-        Physics.gravity *= gravityModifier;
-        playerAudio = GetComponent<AudioSource>();
-        playerAnim = GetComponent<Animator>();
+        
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isOnGround)
+        horizontalInput = Input.GetAxis("Horizontal");
+        transform.Translate(Vector3.right * horizontalInput * Time.deltaTime * speed);
+        
+        // Stops player from going out of bounds
+        if(transform.position.x < -xRange)
         {
-            playerRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            isOnGround = false;
-            playerAnim.SetTrigger("Jump_trig");
-            dirtParticle.Stop();
-            playerAudio.PlayOneShot(jumpSound, 1.0f);
+            transform.position = new Vector3(-xRange, transform.position.y, transform.position.z);
         }
-    }
-
-    public bool gameOver = false;
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if(collision.gameObject.CompareTag("Ground") && !gameOver)
+        if (transform.position.x > xRange)
         {
-            isOnGround = true;
-            dirtParticle.Play();
+            transform.position = new Vector3(xRange, transform.position.y, transform.position.z);
         }
-        else if(collision.gameObject.CompareTag("Obstacle"))
+
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            gameOver = true;
-            Debug.Log("Game Over!");
-            playerAnim.SetBool("Death_b", true);
-            playerAnim.SetInteger("DeathType_int", 1);
-            explosionParticle.Play();
-            dirtParticle.Stop();
-            playerAudio.PlayOneShot(crashSound, 1.0f);
+            // Launch a projectile from the player
+            Instantiate(projectilePrefab, transform.position, projectilePrefab.transform.rotation);
         }
     }
 }
